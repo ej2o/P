@@ -660,30 +660,17 @@
       );
     };
 
-    // قائمة الدول
+    // قائمة الدول المحددة
     const countries = [
         { code: 'SA', name: 'السعودية' },
-        { code: 'AE', name: 'الإمارات' },
-        { code: 'EG', name: 'مصر' },
-        { code: 'KW', name: 'الكويت' },
-        { code: 'QA', name: 'قطر' },
-        { code: 'BH', name: 'البحرين' },
-        { code: 'OM', name: 'عمان' },
-        { code: 'JO', name: 'الأردن' },
-        { code: 'LB', name: 'لبنان' },
         { code: 'IQ', name: 'العراق' },
-        { code: 'DZ', name: 'الجزائر' },
-        { code: 'MA', name: 'المغرب' },
-        { code: 'TN', name: 'تونس' },
-        { code: 'SD', name: 'السودان' },
-        { code: 'YE', 'name': 'اليمن' },
-        { code: 'SY', 'name': 'سوريا' },
-        { code: 'LY', 'name': 'ليبيا' },
-        { code: 'PS', 'name': 'فلسطين' },
-        { code: 'SO', 'name': 'الصومال' },
-        { code: 'DJ', 'name': 'جيبوتي' },
-        { code: 'KM', 'name': 'جزر القمر' },
-        { code: 'MR', 'name': 'موريتانيا' },
+        { code: 'JO', name: 'الأردن' },
+        { code: 'KW', name: 'الكويت' },
+        { code: 'BH', name: 'البحرين' },
+        { code: 'QA', name: 'قطر' },
+        { code: 'OM', name: 'عمان' },
+        { code: 'EG', name: 'مصر' },
+        { code: 'AE', name: 'الإمارات' },
     ];
 
     // --- مكون صفحة الملف الشخصي (ProfilePage) ---
@@ -718,7 +705,12 @@
               const data = userDocSnap.data();
               setUserProfile(data);
               setEditedName(data.name || ''); // تعيين الاسم القابل للتحرير
-              setSelectedCountry(data.country || 'لم يتم الاختيار');
+              // إذا كانت الدولة موجودة في البيانات، استخدمها، وإلا فاستخدم "لم يتم الاختيار"
+              setSelectedCountry(data.country && countries.some(c => c.code === data.country) ? data.country : 'لم يتم الاختيار');
+              // تخزين الدولة في localStorage لتعميمها على مستوى التطبيق
+              if (data.country) {
+                localStorage.setItem('mercato_selected_country', data.country);
+              }
             } else {
               // إذا لم يكن هناك ملف شخصي، قم بإنشاء واحد أساسي
               await window.firebaseFirestore.setDoc(userDocRef, {
@@ -730,6 +722,7 @@
               setUserProfile({ email: currentUser.email, country: 'لم يتم الاختيار', name: '' });
               setEditedName('');
               setSelectedCountry('لم يتم الاختيار');
+              localStorage.setItem('mercato_selected_country', 'لم يتم الاختيار'); // تحديث localStorage
               setModal({ message: 'تم إنشاء ملفك الشخصي بنجاح! يرجى إكمال بياناتك.', type: 'success', onClose: () => setModal(null) });
             }
           } catch (error) {
@@ -809,6 +802,7 @@
           }, { merge: true });
 
           setUserProfile(prev => ({ ...prev, name: editedName, country: selectedCountry }));
+          localStorage.setItem('mercato_selected_country', selectedCountry); // تحديث localStorage
           setEditMode(false); // الخروج من وضع التحرير بعد التحديث
           setModal({ message: 'تم تحديث ملفك الشخصي بنجاح!', type: 'success', onClose: () => setModal(null) });
         } catch (error) {
@@ -925,6 +919,7 @@
                         </div>
                     ) : (
                         <p className="text-sm text-[#9EC0D8] break-all">
+                          {/* عرض اسم الدولة الكامل بدلاً من الرمز */}
                           {countries.find(c => c.code === userProfile?.country)?.name || 'لم يتم الاختيار'}
                         </p>
                     )}
